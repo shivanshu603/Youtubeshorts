@@ -1,11 +1,13 @@
 import os
 import json
-from google import genai
 from dotenv import load_dotenv
+import google.generativeai as genai
 
-# Load API Key
 load_dotenv()
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY") or "api-key")
+
+# Correct Gemini setup
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+model = genai.GenerativeModel('gemini-1.5-flash')   # ya 'gemini-3-flash-preview' agar chahe
 
 class ContentBrain:
     
@@ -29,80 +31,64 @@ class ContentBrain:
             "last_run": ""
         }
 
-    def save_state(self):
+    def save_state(self, new_state):
+        self.state["current_story"] = new_state
         with open(self.state_file, "w", encoding="utf-8") as f:
             json.dump(self.state, f, indent=4, ensure_ascii=False)
 
     def generate_script(self):
-        """Fully Autonomous Movie-Style Story Generator"""
-        print("🎬 Autonomous Story Mode Running...")
+        print("🎬 Autonomous Movie Story Mode Started...")
 
         current = self.state["current_story"]
 
-        # Master Prompt
         prompt = f"""
 You are an autonomous Cinematic Storyteller AI running a never-ending YouTube Shorts mini-movie series.
 
 CURRENT STATE:
 {json.dumps(current, indent=2)}
 
-RULES:
-1. If there is no current story OR current part is completed → Create a **completely new original story**.
-   - Give a catchy, viral title
-   - Choose any genre randomly: horror, dark fantasy, sci-fi thriller, psychological mystery, romance, motivational, supernatural, action-adventure
-   - Create 2-4 memorable characters with short descriptions
-   - Decide total parts (6 to 15)
+Task:
+- Agar story nahi hai ya complete ho gayi → Nayi original story banao (viral title, random genre, 2-4 characters)
+- Agar story chal rahi hai → Sirf next part likho (Part #{current.get('part_number', 1)})
 
-2. If story is ongoing → Write **ONLY the next part** (Part #{current["part_number"]})
-   - 100% consistency rakho characters, plot, tone aur previous events ke saath
-   - Strong hook se shuru karo
-   - Dramatic, emotional aur cinematic rakho
-   - Length: 45-60 seconds jab voice mein bole
-   - End with a strong cliffhanger
+Rules:
+- Characters aur plot 100% consistent rakho
+- Strong dramatic hook se shuru karo
+- 45-60 seconds ka script
+- End with powerful cliffhanger
 
-OUTPUT STRICT JSON ONLY:
+Return ONLY valid JSON:
 {{
   "title": "Story Title",
   "genre": "horror",
-  "part_number": X,
+  "part_number": number,
   "script": "Full spoken script text here...",
-  "visual_1": "first visual keywords for stock footage",
-  "visual_2": "second visual keywords for stock footage",
-  "updated_state": {{ complete updated current_story object here }}
+  "visual_1": "first scene stock footage keywords",
+  "visual_2": "second scene stock footage keywords",
+  "updated_state": {{full updated current_story object}}
 }}
 """
 
-        print("🤖 Generating next part / new story...")
-        response = client.models.generate_content(
-            model='gemini-3-flash-preview',
-            contents=prompt
-        )
+        response = model.generate_content(prompt)
 
-        clean_text = response.text.replace('```json', '').replace('```', '').strip()
+        clean = response.text.strip().replace("```json", "").replace("```", "").strip()
 
         try:
-            result = json.loads(clean_text)
-            
-            # Update state
-            self.state["current_story"] = result["updated_state"]
-            self.state["last_run"] = "2026-04-14"  # current date
-            self.save_state()
-
-            print(f"✅ Story: {result['title']} | Part {result['part_number']}")
+            result = json.loads(clean)
+            self.save_state(result["updated_state"])
+            print(f"✅ Generated: {result['title']} | Part {result['part_number']}")
             return result
-
         except Exception as e:
-            print("❌ JSON Parse Error:", e)
-            print("Raw output:", clean_text)
+            print("❌ JSON Error:", e)
+            print("Raw output:", clean[:500])
             return None
 
 
-# --- TESTING ---
+# Local testing
 if __name__ == "__main__":
     brain = ContentBrain()
-    script = brain.generate_script()
-    
-    if script:
+    output = brain.generate_script()
+    if output:
         with open("latest_script.json", "w", encoding="utf-8") as f:
-            json.dump(script, f, indent=4, ensure_ascii=False)
-        print("✅ Script saved to latest_script.json")
+            json.dump(output, f, indent=4, ensure_ascii=False)
+        print("✅ latest_script.json saved")
