@@ -1,13 +1,12 @@
 import os
 import json
 from dotenv import load_dotenv
-import google.generativeai as genai
+from google import genai   # ← New official SDK
 
 load_dotenv()
 
-# Correct Gemini setup
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-model = genai.GenerativeModel('gemini-1.5-flash')   # ya 'gemini-3-flash-preview' agar chahe
+# New Gemini Client (2026 recommended)
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 class ContentBrain:
     
@@ -69,7 +68,10 @@ Return ONLY valid JSON:
 }}
 """
 
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(
+            model="gemini-2.0-flash-exp",   # ← Best working model 2026 mein
+            contents=prompt
+        )
 
         clean = response.text.strip().replace("```json", "").replace("```", "").strip()
 
