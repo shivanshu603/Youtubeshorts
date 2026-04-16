@@ -34,7 +34,7 @@ class ContentBrain:
         current = self.state["current_story"]
 
         prompt = f"""
-You are an autonomous Cinematic Storyteller AI running a never-ending YouTube Shorts mini-movie series.
+You are an autonomous Cinematic Do you know  Storyteller AI running a never-ending YouTube Shorts mini-movie series where a person teleport to ancient times and do work with morden technique.
 
 CURRENT STATE:
 {json.dumps(current, indent=2)}
