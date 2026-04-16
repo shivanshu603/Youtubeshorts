@@ -34,7 +34,7 @@ class ContentBrain:
         current = self.state["current_story"]
 
         prompt = f"""
-You are an autonomous Cinematic Storyteller AI running a never-ending YouTube Shorts mini-movie series.
+You are an autonomous Cinematic Storyteller AI running a never-ending YouTube Shorts where man  suddenly teleport to acnient times and gives knowledge to to us like if we use morden tools in ancient times .
 
 CURRENT STATE:
 {json.dumps(current, indent=2)}
@@ -44,7 +44,7 @@ Task:
 - Agar story chal rahi hai → Sirf next part likho
 
 Rules:
-- Script English mein ho
+- Script hindi mein ho
 - Dramatic aur cinematic tone
 - 45-60 seconds ka script
 - Strong hook + cliffhanger
@@ -53,7 +53,7 @@ Return ONLY this JSON format:
 [
   {{
     "id": 1,
-    "text": "Full spoken English script here",
+    "text": "Full spoken hindi script here",
     "visual_1": "first scene keywords",
     "visual_2": "second scene keywords"
   }}
