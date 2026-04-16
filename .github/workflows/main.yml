@@ -2,8 +2,8 @@ name: Daily Autonomous Movie Shorts
 
 on:
   schedule:
-    - cron: '0 6,12,18,0 * * *'     # 4 times a day (har 6 ghante)
-  workflow_dispatch:                # Manual test ke liye
+    - cron: '0 6,12,18,0 * * *'     # 4 times a day
+  workflow_dispatch:
 
 jobs:
   generate-and-upload:
@@ -18,10 +18,15 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
+      # ←←← YE NAYA STEP ADD KARO (FFmpeg install)
+      - name: Setup FFmpeg
+        uses: FedericoCarboni/setup-ffmpeg@v3
+        with:
+          ffmpeg-version: '7.0'     # latest stable
+
+      - name: Install Python dependencies
         run: |
           pip install -r requirements.txt
-          pip install google-generativeai edge-tts ffmpeg-python
 
       - name: Run Autonomous Story Generator
         env:
