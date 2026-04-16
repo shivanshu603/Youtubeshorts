@@ -34,33 +34,29 @@ class ContentBrain:
         current = self.state["current_story"]
 
         prompt = f"""
-You are an autonomous Cinematic Storyteller AI.
+You are an autonomous Cinematic Storyteller AI running a never-ending YouTube Shorts mini-movie series.
 
 CURRENT STATE:
 {json.dumps(current, indent=2)}
 
-Task:
-- Agar story nahi hai ya complete ho gayi → Nayi story banao (viral title, random genre, 2-4 characters)
-- Agar story chal rahi hai → Sirf next part likho
+IMPORTANT RULES:
+- Script **MUST be in English only**.
+- Write dramatic, emotional, cinematic style.
+- Length: 45-60 seconds when spoken.
+- Strong hook at start.
+- End with powerful cliffhanger.
 
-Rules:
-- 100% consistency rakho
-- Strong hook + dramatic tone
-- 45-60 seconds script
-- End with cliffhanger
-
-Return ONLY this JSON format (list with 1 scene):
+Return ONLY this JSON format:
 [
   {{
     "id": 1,
-    "text": "Full spoken script here (45-60 seconds)",
-    "visual_1": "first scene keywords",
-    "visual_2": "second scene keywords"
+    "text": "Full spoken English script here (45-60 seconds)",
+    "visual_1": "first scene stock footage keywords",
+    "visual_2": "second scene stock footage keywords"
   }}
 ]
 """
 
-        # Smart Model Selection (Primary + Backup)
         models = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-3.1-flash"]
 
         for model_name in models:
@@ -71,16 +67,18 @@ Return ONLY this JSON format (list with 1 scene):
                     clean = response.text.strip().replace("```json", "").replace("```", "").strip()
                     result = json.loads(clean)
 
-                    # Save state for next part
-                    self.save_state(result[0].get("updated_state", current) if isinstance(result, list) and "updated_state" in result[0] else current)
+                    # Save state for continuity
+                    if isinstance(result, list) and len(result) > 0:
+                        updated_state = result[0].get("updated_state", current)
+                        self.save_state(updated_state)
 
-                    print(f"✅ SUCCESS → {result[0]['text'][:60]}...")
-                    return result   # ← Important: returning list (audio.py ke liye)
+                    print(f"✅ SUCCESS with {model_name}")
+                    return result   # Return list (jo audio.py expect karta hai)
 
                 except Exception as e:
                     err = str(e)
-                    print(f"❌ Failed {model_name}: {err[:100]}")
-                    if "503" in err or "high demand" in err:
+                    print(f"❌ Failed {model_name}: {err[:120]}")
+                    if "503" in err or "high demand" in err or "UNAVAILABLE" in err:
                         time.sleep(10)
                         continue
                     else:
@@ -90,6 +88,7 @@ Return ONLY this JSON format (list with 1 scene):
         return None
 
 
+# For local testing
 if __name__ == "__main__":
     brain = ContentBrain()
     output = brain.generate_script()
