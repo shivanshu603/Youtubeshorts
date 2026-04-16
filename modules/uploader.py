@@ -4,30 +4,37 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
+import google.auth
 
 class YouTubeUploader:
     def __init__(self):
         self.SCOPES = ['https://www.googleapis.com/auth/youtube.upload']
-        self.credentials = None
         self.service = None
 
     def authenticate(self):
-        """Authenticate using saved token or refresh"""
-        token_path = 'token.pickle'
+        """Use secrets from GitHub Actions"""
+        try:
+            from google.oauth2.credentials import Credentials
 
-        if os.path.exists(token_path):
-            with open(token_path, 'rb') as token:
-                self.credentials = pickle.load(token)
+            creds = Credentials(
+                token=None,
+                refresh_token=os.getenv("YOUTUBE_REFRESH_TOKEN"),
+                token_uri="https://oauth2.googleapis.com/token",
+                client_id=os.getenv("YOUTUBE_CLIENT_ID"),
+                client_secret=os.getenv("YOUTUBE_CLIENT_SECRET"),
+                scopes=self.SCOPES
+            )
 
-        if not self.credentials or not self.credentials.valid:
-            if self.credentials and self.credentials.expired and self.credentials.refresh_token:
-                self.credentials.refresh(Request())
-            else:
-                print("❌ YouTube OAuth token missing. Please run setup again.")
-                return False
+            # Refresh token if needed
+            creds.refresh(google.auth.transport.requests.Request())
 
-        self.service = build('youtube', 'v3', credentials=self.credentials)
-        return True
+            self.service = build('youtube', 'v3', credentials=creds)
+            print("✅ YouTube authentication successful")
+            return True
+
+        except Exception as e:
+            print(f"❌ Authentication failed: {e}")
+            return False
 
     def upload(self, video_path, title, description, tags=None, privacy="public"):
         if not os.path.exists(video_path):
@@ -41,8 +48,8 @@ class YouTubeUploader:
             'snippet': {
                 'title': title,
                 'description': description,
-                'tags': tags or ["ai", "story", "shorts", "cinematic"],
-                'categoryId': '22'  # People & Blogs
+                'tags': tags or ["ai", "story", "shorts", "cinematic", "aigenerated"],
+                'categoryId': '22'
             },
             'status': {
                 'privacyStatus': privacy,
@@ -53,17 +60,16 @@ class YouTubeUploader:
         media = MediaFileUpload(video_path, chunksize=-1, resumable=True)
 
         try:
+            print("📤 Uploading to YouTube... (this may take 20-60 seconds)")
             request = self.service.videos().insert(
                 part="snippet,status",
                 body=body,
                 media_body=media
             )
-
-            print("📤 Uploading video to YouTube... (this may take 30-60 seconds)")
             response = request.execute()
 
             video_id = response['id']
-            print(f"✅ Upload Successful!")
+            print(f"✅ UPLOAD SUCCESSFUL!")
             print(f"🔗 https://youtu.be/{video_id}")
             return video_id
 
