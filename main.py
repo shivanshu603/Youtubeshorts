@@ -37,7 +37,7 @@ async def create_one_short():
     """Ek short generate + upload karega"""
     print("🚀 Starting New Short Generation...")
 
-    # 1. BRAIN
+    # 1. BRAIN - Script Generate
     brain = ContentBrain()
     try:
         script_data = brain.generate_script()
@@ -48,7 +48,7 @@ async def create_one_short():
         print(f"❌ Brain Error: {e}")
         return False
 
-    # 2. AUDIO
+    # 2. AUDIO - Natural Hindi Male Voice
     audio_engine = AudioEngine()
     try:
         script_data = await audio_engine.process_script(script_data)
@@ -56,7 +56,7 @@ async def create_one_short():
         print(f"❌ Audio Error: {e}")
         return False
 
-    # 3. ASSETS
+    # 3. ASSETS - Stock Footage
     asset_manager = AssetManager()
     assets_map = asset_manager.get_videos(script_data)
 
@@ -68,35 +68,36 @@ async def create_one_short():
         print("❌ Failed to generate scenes")
         return False
 
-    # 5. Final Video
+    # 5. Final Video with Transitions
     composer.concatenate_with_transitions(final_scene_paths)
     clean_cache()
     print("✅ Short successfully created!")
 
-    # ================== YOUTUBE UPLOAD (SEO Friendly) ==================
+    # ================== YOUTUBE UPLOAD (Better SEO) ==================
     print("📤 Uploading to YouTube...")
 
     try:
         from modules.uploader import YouTubeUploader
         uploader = YouTubeUploader()
 
-        first_scene = script_data[0] if isinstance(script_data, list) else script_data
-        script_text = first_scene.get('text', '')
+        scene = script_data[0] if isinstance(script_data, list) else script_data
+        script_text = scene.get('text', 'Interesting Fact')
 
-        # Better SEO Title (Hindi + High CTR)
-        title = f"क्या आप जानते हैं? 😱 {script_text[:55]}... | Ancient Secret Facts"
+        # Strong Hinglish SEO Title
+        title = f"क्या आप जानते हैं? 😱 {script_text[:58]}... | Mind Blowing Facts"
 
-        # Powerful SEO Description
+        # Rich SEO Description
         description = f"""🔥 क्या आप जानते हैं?
 
-{script_text[:280]}...
+{script_text[:300]}...
 
-📌 प्राचीन भारत के रहस्य | History Facts | Mind Blowing Facts
+🧠 Duniya ke sabse interesting aur rare facts 
+🌍 Ancient History | Lost Civilizations | Mysterious Knowledge
 
-👍 Like करो अगर आपको पसंद आया
-🔔 Subscribe करो ऐसे ही interesting facts के लिए
+👍 Like karo agar dimaag hil gaya
+🔔 Subscribe karo roz naye facts ke liye
 
-#DidYouKnow #AncientHistory #HindiFacts #Knowledge #PrachinRahasy #MindBlowingFacts #Shorts"""
+#DidYouKnow #KyaAapJaanteHain #AncientFacts #MindBlowing #HindiFacts #HistoryShorts #ViralFacts"""
 
         video_path = "assets/final/final_short.mp4"
 
@@ -104,23 +105,26 @@ async def create_one_short():
             video_path=video_path,
             title=title[:100],
             description=description,
-            tags=["didyouknow", "hindi facts", "ancient history", "pracheen rahasya", "mind blowing facts", "knowledge shorts", "history facts", "ai shorts", "interesting facts"],
+            tags=["didyouknow", "kya aap jaante hain", "mind blowing facts", "ancient history", "hindi facts", "pracheen rahasya", "viral shorts", "knowledge", "interesting facts"],
             privacy="public"
         )
 
         if video_id:
             print(f"✅ VIDEO UPLOADED SUCCESSFULLY!")
             print(f"🔗 https://youtu.be/{video_id}")
+            return True
         else:
             print("❌ Upload failed")
+            return False
 
     except Exception as e:
         print(f"❌ Upload Error: {e}")
-    # ====================================================
+        return False
 
 
 async def main():
-    print("🚀 CONTINUOUS MODE STARTED - Will keep generating shorts until GitHub stops...")
+    print("🚀 CONTINUOUS HINDI FACTS MODE STARTED...")
+    print("Will keep generating fresh shorts until GitHub stops the job...\n")
 
     short_count = 0
     start_time = time.time()
@@ -132,17 +136,17 @@ async def main():
         success = await create_one_short()
 
         if success:
-            print(f"✅ Short #{short_count} completed successfully!")
+            print(f"✅ Short #{short_count} completed & uploaded!")
         else:
-            print(f"⚠️ Short #{short_count} failed. Continuing to next...")
+            print(f"⚠️ Short #{short_count} had some issues. Continuing...")
 
-        # 8-10 minute wait between shorts (rate limit aur safety ke liye)
-        print(f"⏳ Waiting 8 minutes before next short...\n")
-        await asyncio.sleep(480)   # 8 minutes
+        # Wait before next short (balanced rate limit ke liye)
+        print(f"⏳ Waiting 9 minutes before next short...\n")
+        await asyncio.sleep(540)   # 9 minutes
 
-        # Safety: 5.5 ghante baad khud band ho jaaye (GitHub timeout se bachne ke liye)
-        if time.time() - start_time > 19800:   # 5.5 hours
-            print("⏹️ Maximum runtime reached. Stopping now...")
+        # Safety stop after ~5.5 hours
+        if time.time() - start_time > 19800:
+            print("⏹️ Maximum runtime reached (5.5 hours). Stopping now...")
             break
 
 
