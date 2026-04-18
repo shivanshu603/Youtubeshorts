@@ -84,10 +84,10 @@ async def create_one_short():
         script_text = scene.get('text', 'Interesting Fact')
 
         # Strong Hinglish SEO Title
-        title = f"क्या आप जानते हैं? 😱 {script_text[:58]}... | Mind Blowing Facts"
+        title = f"do you know ? 😱 {script_text[:58]}... | Mind Blowing Facts"
 
         # Rich SEO Description
-        description = f"""🔥 क्या आप जानते हैं?
+        description = f"Do you know?  आप जानते हैं?
 
 {script_text[:300]}...
 
