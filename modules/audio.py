@@ -5,8 +5,8 @@ from mutagen.mp3 import MP3
 
 class AudioEngine:
     def __init__(self):
-        # Best Natural Indian Male Hindi Voice (Real sounding)
-        self.voice = "hi-IN-MadhurNeural"     # ← Yeh sabse natural male Hindi voice hai
+        # Best Natural Indian Male Hindi Voice
+        self.voice = "hi-IN-MadhurNeural"
         self.output_dir = os.path.join(os.getcwd(), "assets", "audio_clips")
         os.makedirs(self.output_dir, exist_ok=True)
 
@@ -15,17 +15,17 @@ class AudioEngine:
        
         for attempt in range(retries):
             try:
-                # Settings for more natural & less robotic sound
+                # Natural + Satisfying voice settings
                 communicate = edge_tts.Communicate(
                     text=text,
                     voice=self.voice,
-                    rate="+0%",      # Normal speed (natural feel)
-                    pitch="-4Hz",    # Thoda low pitch → zyada masculine & real sound
-                    volume="+5%"
+                    rate="+2%",      # Thoda fast for energy
+                    pitch="-3Hz",    # Masculine aur deep feel
+                    volume="+8%"
                 )
                 
                 await communicate.save(output_path)
-                print(f"   ✅ Hindi Male Voice (MadhurNeural) generated")
+                print(f"   ✅ Natural Hindi Male Voice (MadhurNeural) generated")
                 return output_path
            
             except Exception as e:
@@ -44,11 +44,11 @@ class AudioEngine:
             return 0.0
 
     async def process_script(self, script_data):
-        print(f"🎙️ Starting Audio Generation for {len(script_data)} scenes... (Hindi Male Voice - MadhurNeural)")
+        print(f"🎙️ Starting Audio Generation (Natural Hindi Male Voice + ASMR Style)...")
 
         for scene in script_data:
-            scene_id = scene['id']
-            text = scene['text']
+            scene_id = scene.get('id', 1)
+            text = scene.get('text', '')
             filename = f"voice_{scene_id}.mp3"
            
             try:
@@ -58,7 +58,7 @@ class AudioEngine:
                 scene['audio_path'] = file_path
                 scene['duration'] = duration
                
-                print(f"   ✅ Scene {scene_id}: {duration:.2f}s generated (Natural Hindi Male)")
+                print(f"   ✅ Scene {scene_id}: {duration:.2f}s generated")
                 
                 await asyncio.sleep(1)
                
