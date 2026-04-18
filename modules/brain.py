@@ -10,29 +10,55 @@ client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 class ContentBrain:
     
+    def __init__(self):
+        self.history_file = "topics_history.json"
+        self.history = self.load_history()
+
+    def load_history(self):
+        if os.path.exists(self.history_file):
+            try:
+                with open(self.history_file, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except:
+                pass
+        return {"used_topics": []}
+
+    def save_history(self, topic):
+        if topic not in self.history["used_topics"]:
+            self.history["used_topics"].append(topic)
+            # Sirf last 200 topics rakho (memory limit ke liye)
+            if len(self.history["used_topics"]) > 200:
+                self.history["used_topics"] = self.history["used_topics"][-150:]
+            
+            with open(self.history_file, "w", encoding="utf-8") as f:
+                json.dump(self.history, f, indent=4, ensure_ascii=False)
+
     def generate_script(self):
-        print("🎬 Generating Hindi 'Did You Know' Short...")
+        print("🎬 Generating Global Did You Know Short...")
 
-        prompt = """
-You are a top Hindi YouTube Shorts creator specializing in "क्या आप जानते हैं" और "प्राचीन रहस्य" type videos.
+        prompt = f"""
+You are a professional Hindi YouTube Shorts creator making viral "Did You Know" / "Kya Aap Jaante Hain" videos.
 
-एक engaging, mind-blowing, educational short banao (45-60 seconds).
+Create ONE fresh, mind-blowing, educational short (45-60 seconds).
 
-Rules:
-- Script **pure Hindi** mein ho (simple, spoken, YouTube Shorts jaisa)
-- Shuruaat strong hook se karo jaise "क्या आप जानते हैं...", "प्राचीन काल में...", "वैज्ञानिक भी हैरान रह गए जब..."
-- End mein ek powerful line ya sawal ke saath khatam karo
-- Interesting ancient history, lost knowledge, mysterious facts pe focus karo
+IMPORTANT RULES:
+- Previously used topics: {self.history["used_topics"][-30:]}  ← In topics ko avoid karo
+- Script mainly **Hinglish** mein ho (natural spoken Hindi + English words)
+- Strong curiosity hook se shuru karo
+- End mein powerful line ya sawal ke saath khatam karo
+- Topics global hone chahiye (India, Egypt, Rome, Maya, China, Japan, Lost Civilizations, Ancient Science, Mysteries etc.)
+- Har short unique aur fresh hona chahiye
 
 Return ONLY this exact JSON format:
 
 [
-  {
+  {{
     "id": 1,
-    "text": "Full spoken Hindi script here (45-60 seconds)",
-    "visual_1": "first scene stock footage keywords in English",
-    "visual_2": "second scene stock footage keywords in English"
-  }
+    "title": "Hinglish catchy SEO title",
+    "text": "Full spoken Hinglish script here (45-60 seconds)",
+    "visual_1": "cinematic stock footage keywords",
+    "visual_2": "satisfying ASMR style visual keywords"
+  }}
 ]
 """
 
@@ -52,20 +78,25 @@ Return ONLY this exact JSON format:
                     clean = response.text.strip().replace("```json", "").replace("```", "").strip()
                     result = json.loads(clean)
 
-                    print(f"✅ SUCCESS with {model_name} → Hindi Did You Know Short Generated")
-                    return result
+                    # Save used topic for future avoidance
+                    topic_title = result[0].get("title", "") if isinstance(result, list) else ""
+                    if topic_title:
+                        self.save_history(topic_title)
+
+                    print(f"✅ SUCCESS with {model_name}")
+                    return result[0] if isinstance(result, list) else result
 
                 except Exception as e:
                     err = str(e)
-                    print(f"❌ Failed {model_name}: {err[:120]}")
-                    if "503" in err or "high demand" in err or "UNAVAILABLE" in err:
+                    print(f"❌ Failed {model_name}: {err[:150]}")
+                    if "503" in err or "high demand" in err:
                         print("⏳ High demand, waiting 10 seconds...")
                         time.sleep(10)
                         continue
                     else:
                         break
 
-        print("❌ All models failed. Try again after some time.")
+        print("❌ All models failed. Try again later.")
         return None
 
 
