@@ -7,6 +7,7 @@ class Composer:
         self.temp_dir = os.path.join(os.getcwd(), "assets", "temp")
         self.final_dir = os.path.join(os.getcwd(), "assets", "final")
         self.avatar_path = os.path.join(os.getcwd(), "assets", "avatar", "avatars.mp4")
+        self.bg_music_path = "bgmusic.mp3"   # Root folder mein hai
         
         os.makedirs(self.temp_dir, exist_ok=True)
         os.makedirs(self.final_dir, exist_ok=True)
@@ -32,7 +33,19 @@ class Composer:
         output_path = os.path.join(self.temp_dir, f"scene_{scene_id}.mp4")
 
         try:
-            input_audio = ffmpeg.input(audio_path)
+            voice_audio = ffmpeg.input(audio_path)
+
+            # Background Music (soft volume)
+            if os.path.exists(self.bg_music_path):
+                bg_music = (
+                    ffmpeg.input(self.bg_music_path, stream_loop=-1)
+                    .filter('volume', 0.18)        # Bahut soft background music
+                    .filter('atrim', duration=total_duration + 1)
+                )
+                # Mix voice + background music
+                audio_stream = ffmpeg.filter([voice_audio, bg_music], 'amix', inputs=2, duration='first')
+            else:
+                audio_stream = voice_audio
 
             if is_avatar and os.path.exists(self.avatar_path):
                 print(f"   ⚙️ Processing Scene {scene_id}: 🤖 Avatar Mode")
@@ -69,17 +82,16 @@ class Composer:
 
                 video_stream = ffmpeg.concat(stream_a, stream_b, v=1, a=0)
 
-            # Final Output with better quality
+            # Final Output
             runner = ffmpeg.output(
                 video_stream, 
-                input_audio, 
+                audio_stream, 
                 output_path,
                 vcodec='libx264',
                 acodec='aac',
                 pix_fmt='yuv420p',
                 preset='medium',
-                movflags='faststart',
-                shortest=None
+                movflags='faststart'
             )
             
             runner.run(overwrite_output=True, quiet=True)
@@ -93,7 +105,6 @@ class Composer:
         rendered_paths = []
         avatar_indices = []
 
-        # Randomly inject avatar in 1-2 middle scenes
         if len(script_data) >= 4 and os.path.exists(self.avatar_path):
             valid_range = list(range(1, len(script_data)-1))
             count = min(2, len(valid_range))
@@ -114,7 +125,7 @@ class Composer:
         return rendered_paths
 
     def concatenate_with_transitions(self, video_paths, output_filename="final_short.mp4"):
-        print("🎬 Stitching final video with transitions...")
+        print("🎬 Stitching final video with transitions & background music...")
 
         output_path = os.path.join(self.final_dir, output_filename)
         
@@ -127,7 +138,6 @@ class Composer:
         if not video_paths:
             return None
 
-        # First video
         input1 = ffmpeg.input(video_paths[0])
         v_stream = input1.video
         a_stream = input1.audio
