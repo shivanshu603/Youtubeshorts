@@ -4,6 +4,7 @@ from modules.brain import ContentBrain
 from modules.asset_manager import AssetManager
 from modules.audio import AudioEngine
 from modules.composer import Composer
+from modules.thumbnail import ThumbnailGenerator   # ← New added
 import os
 import shutil
 
@@ -33,9 +34,9 @@ def clean_cache():
     print("✅ Workspace cleaned!")
 
 
-async def create_one_short():
+async def create_one_short(short_number):
     """Ek short generate + upload karega"""
-    print("🚀 Starting New Short Generation...")
+    print(f"🚀 Starting New Short Generation #{short_number}...")
 
     # 1. BRAIN
     brain = ContentBrain()
@@ -73,7 +74,16 @@ async def create_one_short():
     clean_cache()
     print("✅ Short successfully created!")
 
-    # ================== YOUTUBE UPLOAD (Better SEO) ==================
+    # 6. THUMBNAIL GENERATION (New Feature)
+    print("🖼️ Generating Thumbnail...")
+    thumbnail_gen = ThumbnailGenerator()
+    thumbnail_path = thumbnail_gen.generate_thumbnail(
+        title=script_data[0].get('title', 'Did You Know'),
+        script_text=script_data[0].get('text', ''),
+        short_number=short_number
+    )
+
+    # 7. YOUTUBE UPLOAD
     print("📤 Uploading to YouTube...")
 
     try:
@@ -83,10 +93,8 @@ async def create_one_short():
         scene = script_data[0] if isinstance(script_data, list) else script_data
         script_text = scene.get('text', 'Interesting Fact')
 
-        # Strong Hinglish SEO Title
         title = f"क्या आप जानते हैं? 😱 {script_text[:58]}... | Mind Blowing Facts"
 
-        # Correct Multi-line Description
         description = f"""🔥 क्या आप जानते हैं?
 
 {script_text[:300]}...
@@ -133,7 +141,7 @@ async def main():
         short_count += 1
         print(f"\n🔄 === Generating Short #{short_count} ===\n")
 
-        success = await create_one_short()
+        success = await create_one_short(short_number=short_count)
 
         if success:
             print(f"✅ Short #{short_count} completed & uploaded!")
@@ -141,9 +149,9 @@ async def main():
             print(f"⚠️ Short #{short_count} had some issues. Continuing...")
 
         print(f"⏳ Waiting 9 minutes before next short...\n")
-        await asyncio.sleep(540)   # 9 minutes
+        await asyncio.sleep(540)
 
-        if time.time() - start_time > 19800:   # 5.5 hours
+        if time.time() - start_time > 19800:
             print("⏹️ Maximum runtime reached. Stopping now...")
             break
 
